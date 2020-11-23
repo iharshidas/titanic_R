@@ -1,0 +1,124 @@
+---
+title: "Titanic_Analysis"
+author: "Harshita Das"
+date: "22/11/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# Installing Packages
+install.packages("ggplot2")
+install.packages("dplyr")
+install.packages("GGally")
+install.packages("rpart")
+install.packages("rpart.plot")
+install.packages("randomForest")
+install.packages("knitr")
+
+# Loading packages
+library(ggplot2)
+library(dplyr)
+library(GGally)
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(knitr)   
+
+#setting working directory
+setwd("C:/Users/Harshita/Desktop/Datasets/Titanic")
+
+#reading data from test and train sets
+titanic.train=read.csv(file="train.csv", stringsAsFactors = TRUE, header = TRUE)
+titanic.test=read.csv(file="test.csv", stringsAsFactors = TRUE, header = TRUE)
+
+titanic.train$IsTrainSet <- TRUE
+titanic.test$IsTrainSet <- FALSE
+ncol(titanic.test)
+ncol(titanic.train)
+
+titanic.test$Survived <- NA
+
+#joining the two datasets
+titanic.full <- rbind(titanic.train, titanic.test)
+
+titanic.full[titanic.full$Embarked=='', "Embarked"] <- 'S'
+table(titanic.full$Embarked)
+
+#checking number of missing age values
+table(is.na(titanic.full$Age))
+age_median <- median(titanic.full$Age, na.rm=TRUE)
+titanic.full[is.na(titanic.full$Age), "Age"] <- age_median
+
+#checking number of missing fare values
+table(is.na(titanic.full$Fare))
+fare_median <- median(titanic.full$Fare, na.rm=TRUE)
+titanic.full[is.na(titanic.full$Fare), "Fare"] <- fare_median
+
+#splitting again into train and test data
+titanic.train <- titanic.full[titanic.full$IsTrainSet==TRUE,]
+titanic.test <- titanic.full[titanic.full$IsTrainSet==FALSE,]
+
+#categotical casting
+titanic.full$Pclass <- as.factor(titanic.full$Pclass)
+titanic.full$Sex <- as.factor(titanic.full$Sex)
+titanic.full$Embarked <- as.factor(titanic.full$Embarked)
+titanic.full$Survived <- as.factor(titanic.full$Survived)
+titanic.full$Age <- as.factor(titanic.full$Age)
+titanic.full$SibSp <- as.factor(titanic.full$SibSp)
+titanic.full$Parch <- as.factor(titanic.full$Parch)
+titanic.full$Fare <- as.factor(titanic.full$Fare)
+
+
+LT=dim(titanic.train)[1]
+
+#```{r}
+# All defaults
+#ggplot(data=titanic.full[1:LT,],aes(x=Sex,fill=Survived))+geom_bar()
+#```
+
+```{r}
+ggplot(data = titanic.full[1:LT,],aes(x=Embarked,fill=Survived))+geom_bar(position="fill")+ylab("Frequency")
+```
+
+```{r}
+ggplot(data = titanic.full[1:LT,],aes(x=Pclass,fill=Survived))+geom_bar(position="fill")+ylab("Frequency")
+```
+
+```{r}
+ggplot(data = titanic.full[1:LT,],aes(x=Embarked,fill=Survived))+geom_bar(position="fill")+facet_wrap(~Pclass)
+```
+
+```{r}
+ggplot(data = titanic.full[1:LT,],aes(x=Embarked,fill=Survived))+geom_bar(position="fill")+facet_wrap(~Sex)
+```
+
+```{r}
+ggplot(data = titanic.full[1:LT,],aes(x=Pclass,fill=Survived))+geom_bar(position="fill")+facet_wrap(~Sex)
+```
+
+```{r}
+ggplot(data = titanic.full[1:LT,],aes(x=SibSp,fill=Survived))+geom_bar()
+```
+
+```{r}
+ggplot(data = titanic.full[1:LT,],aes(x=Parch,fill=Survived))+geom_bar()
+```
+
+
+titanic.full$Title <- gsub('(.*, )|(\\..*)', '', titanic.full$Name)
+titanic.full$Title[titanic.full$Title == 'Mlle']<- 'Miss' 
+titanic.full$Title[titanic.full$Title == 'Ms']<- 'Miss'
+titanic.full$Title[titanic.full$Title == 'Mme']<- 'Mrs' 
+titanic.full$Title[titanic.full$Title == 'Lady']<- 'Miss'
+titanic.full$Title[titanic.full$Title == 'Dona']<- 'Miss'
+
+officer<- c('Capt','Col','Don','Dr','Jonkheer','Major','Rev','Sir','the Countess')
+
+titanic.full$Title[titanic.full$Title %in% officer]<-'Officer'
+
+titanic.full$Title<- as.factor(titanic.full$Title)
+
+```{r}
+ggplot(data = titanic.full[1:LT,],aes(x=Title,fill=Survived))+geom_bar(position="fill")+ylab("Frequency")
+```
